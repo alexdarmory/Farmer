@@ -1,0 +1,745 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Zoo Keeper Dash - Tropical Adventure</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Luckiest+Guy&family=Quicksand:wght@500;700&display=swap');
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Quicksand', sans-serif;
+            background: linear-gradient(180deg, #87CEEB 0%, #F4D03F 30%, #D4A574 60%, #C9A86A 100%);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            overflow: hidden;
+            position: relative;
+        }
+
+        body::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-image: 
+                radial-gradient(circle at 20% 20%, rgba(255, 220, 100, 0.3) 0%, transparent 40%),
+                radial-gradient(circle at 80% 80%, rgba(160, 120, 60, 0.2) 0%, transparent 50%),
+                repeating-linear-gradient(90deg, transparent, transparent 50px, rgba(200, 180, 120, 0.1) 50px, rgba(200, 180, 120, 0.1) 100px);
+            pointer-events: none;
+        }
+
+        #game-container {
+            position: relative;
+            width: 400px;
+            height: 600px;
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            border-radius: 30px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            overflow: hidden;
+            border: 3px solid rgba(255, 255, 255, 0.3);
+        }
+
+        #game-canvas {
+            display: block;
+            width: 100%;
+            height: 100%;
+        }
+
+        #hud {
+            position: absolute;
+            top: 20px;
+            left: 10px;
+            right: 10px;
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            z-index: 10;
+            pointer-events: none;
+        }
+
+        .stat {
+            background: rgba(0, 50, 100, 0.8);
+            backdrop-filter: blur(10px);
+            padding: 8px 15px;
+            border-radius: 20px;
+            border: 2px solid rgba(255, 255, 255, 0.4);
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
+            flex: 1;
+            margin: 0 5px;
+            text-align: center;
+        }
+
+        .stat-label {
+            font-family: 'Luckiest Guy', cursive;
+            font-size: 10px;
+            color: #ffeb3b;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5);
+        }
+
+        .stat-value {
+            font-family: 'Luckiest Guy', cursive;
+            font-size: 20px;
+            color: #ffffff;
+            text-shadow: 3px 3px 6px rgba(0, 0, 0, 0.5);
+            margin-top: 5px;
+        }
+
+        #start-screen {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: linear-gradient(180deg, rgba(135, 206, 235, 0.95) 0%, rgba(244, 208, 63, 0.95) 30%, rgba(212, 165, 116, 0.95) 60%, rgba(201, 168, 106, 0.95) 100%);
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            z-index: 20;
+            animation: fadeIn 0.5s ease;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+
+        h1 {
+            font-family: 'Luckiest Guy', cursive;
+            font-size: 48px;
+            color: #ffffff;
+            text-shadow: 5px 5px 0px rgba(0, 100, 150, 0.8);
+            margin-bottom: 10px;
+            text-align: center;
+            animation: bounce 2s ease-in-out infinite;
+        }
+
+        @keyframes bounce {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-10px); }
+        }
+
+        .subtitle {
+            font-family: 'Quicksand', sans-serif;
+            font-size: 18px;
+            font-weight: 700;
+            color: rgba(0, 50, 100, 0.9);
+            margin-bottom: 30px;
+        }
+
+        .button {
+            font-family: 'Luckiest Guy', cursive;
+            font-size: 24px;
+            padding: 15px 40px;
+            background: linear-gradient(135deg, #ff6b6b, #ff8e53);
+            color: white;
+            border: 4px solid rgba(255, 255, 255, 0.8);
+            border-radius: 50px;
+            cursor: pointer;
+            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.3);
+            transition: all 0.3s ease;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+        }
+
+        .button:hover {
+            transform: scale(1.1) translateY(-5px);
+            box-shadow: 0 12px 30px rgba(0, 0, 0, 0.4);
+        }
+
+        .button:active {
+            transform: scale(1.05) translateY(-2px);
+        }
+
+        .controls {
+            margin-top: 30px;
+            text-align: center;
+            font-size: 14px;
+            color: rgba(0, 50, 100, 0.8);
+            font-weight: 700;
+        }
+
+        .controls div {
+            margin: 5px 0;
+        }
+
+        .hidden {
+            display: none !important;
+        }
+
+        .emoji {
+            font-size: 60px;
+            margin-bottom: 20px;
+            animation: spin 3s linear infinite;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+    </style>
+</head>
+<body>
+    <div id="game-container">
+        <canvas id="game-canvas"></canvas>
+        
+        <div id="hud">
+            <div class="stat">
+                <div class="stat-label">Food</div>
+                <div class="stat-value" id="food-count">0</div>
+            </div>
+            <div class="stat">
+                <div class="stat-label">High Score</div>
+                <div class="stat-value" id="high-score">1</div>
+            </div>
+            <div class="stat">
+                <div class="stat-label">Level</div>
+                <div class="stat-value" id="level">1</div>
+            </div>
+        </div>
+
+        <div id="start-screen">
+            <div class="emoji">🦁</div>
+            <h1>ZOO KEEPER DASH</h1>
+            <div class="subtitle">Dodge the animals, collect the food!</div>
+            <button class="button" id="start-btn">START GAME</button>
+            <div class="controls">
+                <div>🎮 Use ARROW KEYS or WASD to move</div>
+                <div>🍎 Collect 10 food items to level up!</div>
+                <div>💥 Getting hit restarts you at Level 1!</div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const canvas = document.getElementById('game-canvas');
+        const ctx = canvas.getContext('2d');
+        const startScreen = document.getElementById('start-screen');
+        const startBtn = document.getElementById('start-btn');
+        const foodCountEl = document.getElementById('food-count');
+        const levelEl = document.getElementById('level');
+        const highScoreEl = document.getElementById('high-score');
+
+        canvas.width = 400;
+        canvas.height = 600;
+
+        // Sound effects using Web Audio API
+        const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+
+        // Background music system
+        let musicOscillators = [];
+        let musicGainNode = null;
+        let musicPlaying = false;
+
+        function startBackgroundMusic() {
+            if (musicPlaying) return;
+            musicPlaying = true;
+            playBackgroundMusic();
+        }
+
+        function stopBackgroundMusic() {
+            musicPlaying = false;
+            musicOscillators.forEach(osc => {
+                try {
+                    osc.stop();
+                } catch(e) {}
+            });
+            musicOscillators = [];
+        }
+
+        function playBackgroundMusic() {
+            if (!musicPlaying) return;
+
+            // Stop previous oscillators
+            musicOscillators.forEach(osc => {
+                try {
+                    osc.stop();
+                } catch(e) {}
+            });
+            musicOscillators = [];
+
+            // Calculate tempo based on food count (speeds up with more food)
+            const baseInterval = 400; // milliseconds
+            const speedMultiplier = 1 - (gameState.foodCount * 0.08); // Faster with more food
+            const interval = Math.max(150, baseInterval * speedMultiplier);
+
+            // Create melody pattern
+            const melody = [
+                { freq: 523, duration: 0.15 }, // C
+                { freq: 587, duration: 0.15 }, // D
+                { freq: 659, duration: 0.15 }, // E
+                { freq: 523, duration: 0.15 }, // C
+            ];
+
+            let noteIndex = 0;
+
+            function playNote() {
+                if (!musicPlaying || !gameState.gameRunning) return;
+
+                const note = melody[noteIndex];
+                const oscillator = audioContext.createOscillator();
+                const gainNode = audioContext.createGain();
+
+                oscillator.connect(gainNode);
+                gainNode.connect(audioContext.destination);
+
+                oscillator.frequency.value = note.freq;
+                oscillator.type = 'square';
+                gainNode.gain.value = 0.08; // Quiet background music
+
+                oscillator.start(audioContext.currentTime);
+                oscillator.stop(audioContext.currentTime + note.duration);
+
+                musicOscillators.push(oscillator);
+
+                noteIndex = (noteIndex + 1) % melody.length;
+                setTimeout(playNote, interval);
+            }
+
+            playNote();
+        }
+
+        function playSound(frequency, duration, type = 'sine', volume = 0.3) {
+            const oscillator = audioContext.createOscillator();
+            const gainNode = audioContext.createGain();
+            
+            oscillator.connect(gainNode);
+            gainNode.connect(audioContext.destination);
+            
+            oscillator.frequency.value = frequency;
+            oscillator.type = type;
+            gainNode.gain.value = volume;
+            
+            oscillator.start(audioContext.currentTime);
+            oscillator.stop(audioContext.currentTime + duration);
+        }
+
+        // Eating/chomping sound effect - "nom nom nom"
+        function playCollectSound() {
+            // More pronounced chomping sound
+            playSound(400, 0.1, 'square', 0.25);
+            setTimeout(() => playSound(500, 0.1, 'square', 0.22), 80);
+            setTimeout(() => playSound(420, 0.15, 'square', 0.2), 160);
+        }
+
+        function playLevelUpSound() {
+            playSound(523, 0.15, 'square', 0.25);
+            setTimeout(() => playSound(659, 0.15, 'square', 0.25), 100);
+            setTimeout(() => playSound(784, 0.15, 'square', 0.25), 200);
+            setTimeout(() => playSound(1047, 0.3, 'square', 0.25), 300);
+        }
+
+        function playGameOverSound() {
+            playSound(450, 0.15, 'sawtooth', 0.25);
+            setTimeout(() => playSound(350, 0.15, 'sawtooth', 0.25), 120);
+            setTimeout(() => playSound(250, 0.3, 'sawtooth', 0.25), 240);
+        }
+
+        function playMoveSound() {
+            playSound(200, 0.04, 'triangle', 0.04);
+        }
+
+        // Game state
+        let gameState = {
+            player: { x: 200, y: 550, size: 30 },
+            animals: [],
+            foods: [],
+            trees: [],
+            foodCount: 0,
+            level: 1,
+            highScore: 1,
+            score: 0,
+            gameRunning: false,
+            keys: {},
+            gridSize: 50,
+            speed: 2,
+            isHit: false,
+            hitFlashTime: 0,
+            animalSpawnTimer: 0,
+            lastMoveTime: 0
+        };
+
+        // Animal types (emoji representations)
+        const animalTypes = ['🦁', '🐯', '🦒', '🐘', '🦓', '🦏', '🦛', '🐊', '🦘', '🐆'];
+        const foodTypes = ['🍎', '🍌', '🍊', '🥕', '🥬', '🍇', '🍉', '🥦'];
+
+        // Initialize game
+        function initGame() {
+            // Load high score from localStorage or use current if better
+            const savedHighScore = localStorage.getItem('zooKeeperHighScore');
+            const previousHighScore = savedHighScore ? parseInt(savedHighScore) : 1;
+            const currentHighScore = gameState.highScore || 1;
+            
+            gameState = {
+                player: { x: 200, y: 550, size: 30 },
+                animals: [],
+                foods: [],
+                trees: [],
+                foodCount: 0,
+                level: 1,
+                highScore: Math.max(previousHighScore, currentHighScore),
+                score: 0,
+                gameRunning: true,
+                keys: {},
+                gridSize: 50,
+                speed: 2,
+                isHit: false,
+                hitFlashTime: 0,
+                animalSpawnTimer: 0,
+                lastMoveTime: 0
+            };
+            
+            // Create static trees as obstacles
+            createTrees();
+            
+            // Create initial lanes with animals
+            for (let i = 0; i < 10; i++) {
+                createAnimalLane(i);
+            }
+            
+            // Create initial food items
+            for (let i = 0; i < 6; i++) {
+                createFood();
+            }
+            
+            updateHUD();
+        }
+
+        function createTrees() {
+            // Place 4-5 static trees spread across the savanna
+            const treeCount = 4 + Math.floor(Math.random() * 2);
+            for (let i = 0; i < treeCount; i++) {
+                gameState.trees.push({
+                    x: 60 + (i * (canvas.width - 120) / treeCount) + Math.random() * 40,
+                    y: 80 + Math.random() * (canvas.height - 200),
+                    size: 25
+                });
+            }
+        }
+
+        function createAnimalLane(laneIndex) {
+            const y = laneIndex * gameState.gridSize;
+            const direction = Math.random() > 0.5 ? 1 : -1;
+            
+            // More animals per lane as level increases - NON-STOP animals!
+            const baseAnimals = 2;
+            const levelBonus = Math.floor(gameState.level * 0.8);
+            const animalCount = baseAnimals + levelBonus;
+            
+            const animalType = animalTypes[Math.floor(Math.random() * animalTypes.length)];
+            
+            for (let i = 0; i < animalCount; i++) {
+                gameState.animals.push({
+                    x: direction > 0 ? -100 - (i * 120) : canvas.width + 100 + (i * 120),
+                    y: y,
+                    size: 35,
+                    speed: (gameState.speed + Math.random() * 1.5) * direction,
+                    type: animalType,
+                    lane: laneIndex
+                });
+            }
+        }
+
+        function createFood() {
+            const foodType = foodTypes[Math.floor(Math.random() * foodTypes.length)];
+            gameState.foods.push({
+                x: Math.random() * (canvas.width - 30) + 15,
+                y: Math.random() * (canvas.height - 100) + 15,
+                size: 25,
+                type: foodType,
+                collected: false
+            });
+        }
+
+        // Update game
+        function update() {
+            if (!gameState.gameRunning) return;
+
+            // Prevent movement during hit flash
+            if (gameState.isHit) return;
+
+            // Move player with sound
+            const moveSpeed = 4;
+            const currentTime = Date.now();
+            
+            let newX = gameState.player.x;
+            let newY = gameState.player.y;
+            
+            if (gameState.keys['ArrowUp'] || gameState.keys['w'] || gameState.keys['W']) {
+                newY = Math.max(0, gameState.player.y - moveSpeed);
+            }
+            if (gameState.keys['ArrowDown'] || gameState.keys['s'] || gameState.keys['S']) {
+                newY = Math.min(canvas.height - gameState.player.size, gameState.player.y + moveSpeed);
+            }
+            if (gameState.keys['ArrowLeft'] || gameState.keys['a'] || gameState.keys['A']) {
+                newX = Math.max(0, gameState.player.x - moveSpeed);
+            }
+            if (gameState.keys['ArrowRight'] || gameState.keys['d'] || gameState.keys['D']) {
+                newX = Math.min(canvas.width - gameState.player.size, gameState.player.x + moveSpeed);
+            }
+            
+            // Check collision with trees before moving
+            let canMove = true;
+            const testPlayer = { x: newX, y: newY, size: gameState.player.size };
+            gameState.trees.forEach(tree => {
+                if (checkCollision(testPlayer, tree)) {
+                    canMove = false;
+                }
+            });
+            
+            // Only move if not colliding with a tree
+            if (canMove) {
+                if (newX !== gameState.player.x || newY !== gameState.player.y) {
+                    gameState.player.x = newX;
+                    gameState.player.y = newY;
+                    if (currentTime - gameState.lastMoveTime > 100) {
+                        playMoveSound();
+                        gameState.lastMoveTime = currentTime;
+                    }
+                }
+            }
+
+            // Continuously spawn more animals - NON-STOP!
+            gameState.animalSpawnTimer++;
+            if (gameState.animalSpawnTimer > 30) {
+                gameState.animalSpawnTimer = 0;
+                const randomLane = Math.floor(Math.random() * 10);
+                const direction = Math.random() > 0.5 ? 1 : -1;
+                const animalType = animalTypes[Math.floor(Math.random() * animalTypes.length)];
+                
+                gameState.animals.push({
+                    x: direction > 0 ? -100 : canvas.width + 100,
+                    y: randomLane * gameState.gridSize,
+                    size: 35,
+                    speed: (gameState.speed + Math.random() * 1.5) * direction,
+                    type: animalType,
+                    lane: randomLane
+                });
+            }
+
+            // Update animals
+            gameState.animals.forEach((animal, index) => {
+                animal.x += animal.speed;
+                
+                // Remove off-screen animals
+                if (animal.x < -150 || animal.x > canvas.width + 150) {
+                    gameState.animals.splice(index, 1);
+                }
+
+                // Check collision with player
+                if (checkCollision(gameState.player, animal)) {
+                    gameOver();
+                }
+            });
+
+            // Check food collection
+            gameState.foods.forEach((food, index) => {
+                if (!food.collected && checkCollision(gameState.player, food)) {
+                    food.collected = true;
+                    gameState.foodCount++;
+                    gameState.score += 10;
+                    playCollectSound(); // Play eating sound!
+                    
+                    // Check for level up
+                    if (gameState.foodCount >= 10) {
+                        levelUp();
+                    }
+                    
+                    updateHUD();
+                    gameState.foods.splice(index, 1);
+                    createFood();
+                }
+            });
+        }
+
+        function checkCollision(obj1, obj2) {
+            return obj1.x < obj2.x + obj2.size &&
+                   obj1.x + obj1.size > obj2.x &&
+                   obj1.y < obj2.y + obj2.size &&
+                   obj1.y + obj1.size > obj2.y;
+        }
+
+        function levelUp() {
+            gameState.level++;
+            gameState.foodCount = 0;
+            gameState.speed += 0.5;
+            
+            // Update high score if current level is higher
+            if (gameState.level > gameState.highScore) {
+                gameState.highScore = gameState.level;
+                // Save high score to localStorage
+                localStorage.setItem('zooKeeperHighScore', gameState.highScore);
+            }
+            
+            playLevelUpSound();
+            updateHUD();
+            
+            // Add more animals when leveling up!
+            for (let i = 0; i < 10; i++) {
+                createAnimalLane(i);
+            }
+            
+            // Restart music at base speed for new level
+            stopBackgroundMusic();
+            startBackgroundMusic();
+        }
+
+        function gameOver() {
+            if (gameState.isHit) return; // Prevent multiple hits
+            
+            // Stop music immediately when you die
+            stopBackgroundMusic();
+            
+            playGameOverSound();
+            
+            // Set hit flash effect
+            gameState.isHit = true;
+            gameState.hitFlashTime = Date.now();
+            
+            // Reset after a brief delay
+            setTimeout(() => {
+                gameState.isHit = false;
+                // Reset player to starting position
+                gameState.player.x = 200;
+                gameState.player.y = 550;
+                // Reset food count, level, and speed - FULL RESTART!
+                gameState.foodCount = 0;
+                gameState.level = 1;
+                gameState.speed = 2;
+                // Keep high score!
+                // Clear all animals and restart lanes
+                gameState.animals = [];
+                for (let i = 0; i < 10; i++) {
+                    createAnimalLane(i);
+                }
+                // Recreate trees in new positions
+                gameState.trees = [];
+                createTrees();
+                updateHUD();
+                // Restart music at normal slow speed
+                startBackgroundMusic();
+            }, 600);
+        }
+
+        function updateHUD() {
+            foodCountEl.textContent = gameState.foodCount;
+            levelEl.textContent = gameState.level;
+            highScoreEl.textContent = gameState.highScore;
+        }
+
+        // Draw game
+        function draw() {
+            // Clear canvas with tropical gradient (or red if hit)
+            if (gameState.isHit && (Date.now() - gameState.hitFlashTime) < 600) {
+                // Flash red background when hit
+                const flashIntensity = Math.sin((Date.now() - gameState.hitFlashTime) * 0.02) * 0.5 + 0.5;
+                ctx.fillStyle = `rgba(255, 50, 50, ${flashIntensity * 0.7})`;
+                ctx.fillRect(0, 0, canvas.width, canvas.height);
+            } else {
+                // Savanna gradient - sky to grass
+                const gradient = ctx.createLinearGradient(0, 0, 0, canvas.height);
+                gradient.addColorStop(0, '#87CEEB');  // Sky blue
+                gradient.addColorStop(0.3, '#F4D03F'); // Golden yellow
+                gradient.addColorStop(0.7, '#D4A574'); // Tan grass
+                gradient.addColorStop(1, '#C9A86A');   // Dry grass
+                ctx.fillStyle = gradient;
+                ctx.fillRect(0, 0, canvas.width, canvas.height);
+            }
+
+            // Draw grid lines for lanes (subtle savanna paths)
+            ctx.strokeStyle = 'rgba(160, 120, 60, 0.2)';
+            ctx.lineWidth = 2;
+            for (let i = 0; i < canvas.height; i += gameState.gridSize) {
+                ctx.beginPath();
+                ctx.moveTo(0, i);
+                ctx.lineTo(canvas.width, i);
+                ctx.stroke();
+            }
+
+            // Draw static savanna trees as obstacles
+            gameState.trees.forEach(tree => {
+                // Tree trunk
+                ctx.fillStyle = '#8B4513';
+                ctx.fillRect(tree.x - 5, tree.y - 3, 10, 20);
+                
+                // Tree foliage (acacia-style)
+                ctx.fillStyle = '#6B8E23';
+                ctx.beginPath();
+                ctx.arc(tree.x, tree.y - 15, 18, 0, Math.PI * 2);
+                ctx.fill();
+                ctx.beginPath();
+                ctx.arc(tree.x - 10, tree.y - 10, 13, 0, Math.PI * 2);
+                ctx.fill();
+                ctx.beginPath();
+                ctx.arc(tree.x + 10, tree.y - 10, 13, 0, Math.PI * 2);
+                ctx.fill();
+            });
+
+            // Draw food
+            gameState.foods.forEach(food => {
+                if (!food.collected) {
+                    ctx.font = `${food.size}px Arial`;
+                    ctx.textAlign = 'center';
+                    ctx.textBaseline = 'middle';
+                    ctx.fillText(food.type, food.x + food.size / 2, food.y + food.size / 2);
+                }
+            });
+
+            // Draw animals
+            gameState.animals.forEach(animal => {
+                ctx.font = `${animal.size}px Arial`;
+                ctx.textAlign = 'center';
+                ctx.textBaseline = 'middle';
+                ctx.fillText(animal.type, animal.x + animal.size / 2, animal.y + animal.size / 2);
+            });
+
+            // Draw player (zoo keeper) - blink during hit
+            if (!gameState.isHit || Math.floor(Date.now() / 100) % 2 === 0) {
+                ctx.font = `${gameState.player.size}px Arial`;
+                ctx.textAlign = 'center';
+                ctx.textBaseline = 'middle';
+                ctx.fillText('👨‍🌾', gameState.player.x + gameState.player.size / 2, gameState.player.y + gameState.player.size / 2);
+            }
+        }
+
+        // Game loop
+        function gameLoop() {
+            update();
+            draw();
+            requestAnimationFrame(gameLoop);
+        }
+
+        // Event listeners
+        document.addEventListener('keydown', (e) => {
+            gameState.keys[e.key] = true;
+        });
+
+        document.addEventListener('keyup', (e) => {
+            gameState.keys[e.key] = false;
+        });
+
+        startBtn.addEventListener('click', () => {
+            startScreen.classList.add('hidden');
+            initGame();
+            startBackgroundMusic(); // Start the music!
+            gameLoop();
+        });
+
+        // Start initial draw
+        draw();
+    </script>
+</body>
+</html>
